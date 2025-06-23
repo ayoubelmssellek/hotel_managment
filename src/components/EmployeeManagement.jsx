@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { 
   Plus, 
   Search, 
   Filter, 
   User, 
-  Mail, 
   Phone, 
   Calendar,
   DollarSign,
@@ -12,15 +12,26 @@ import {
   Edit3,
   Trash2
 } from 'lucide-react';
+import { AddEmployeeModal } from './AddEmployeeModal';
+import { UpdateEmployeeModal } from './UpdateEmployeeModal';
+import {deleteEmployee } from '../store/actions/clientActions';
 
-export const EmployeeManagement = ({ employees, setEmployees }) => {
+export const EmployeeManagement = () => {
+  const dispatch = useDispatch();
+  const employees = useSelector(state => state.listEmployee);
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
 
   const filteredEmployees = employees.filter(employee => {
-    const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         employee.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === 'all' || employee.role === filterRole;
     return matchesSearch && matchesRole;
   });
@@ -45,6 +56,19 @@ export const EmployeeManagement = ({ employees, setEmployees }) => {
     }
   };
 
+  // handle delete
+  const handleDelete = (id) => {
+    if(window.confirm('Are you sure you want to delete this employee?')) {
+      dispatch(deleteEmployee(id));
+    }
+  };
+
+  // Example edit handler (you can implement your own modal or inline edit)
+  const handleEditClick = (employee) => {
+    setEditingEmployee(employee);
+    // open modal or show edit form
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -53,7 +77,7 @@ export const EmployeeManagement = ({ employees, setEmployees }) => {
           <p className="text-gray-600 mt-2">Manage your hotel staff and their information</p>
         </div>
         <button
-          onClick={() => setShowAddForm(true)}
+          onClick={() => setShowAddModal(true)}
           className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg"
         >
           <Plus className="w-5 h-5" />
@@ -136,7 +160,7 @@ export const EmployeeManagement = ({ employees, setEmployees }) => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">
-                ${Math.round(employees.reduce((sum, e) => sum + e.salary, 0) / employees.length / 1000)}K
+                ${Math.round(employees.reduce((sum, e) => sum + e.salary, 0) / employees.length / 1000) || 0}K
               </p>
               <p className="text-sm text-gray-600">Avg. Salary</p>
             </div>
@@ -176,10 +200,6 @@ export const EmployeeManagement = ({ employees, setEmployees }) => {
                         <p className="text-sm font-medium text-gray-900">{employee.name}</p>
                         <div className="flex items-center space-x-4 mt-1">
                           <div className="flex items-center space-x-1">
-                            <Mail className="w-3 h-3 text-gray-400" />
-                            <span className="text-xs text-gray-500">{employee.email}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
                             <Phone className="w-3 h-3 text-gray-400" />
                             <span className="text-xs text-gray-500">{employee.phone}</span>
                           </div>
@@ -208,10 +228,16 @@ export const EmployeeManagement = ({ employees, setEmployees }) => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center space-x-2">
-                      <button className="text-blue-600 hover:text-blue-800 transition-colors">
+                      <button 
+                        onClick={() => { setSelectedEmployee(employee); setShowUpdateModal(true); }}
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                      >
                         <Edit3 className="w-4 h-4" />
                       </button>
-                      <button className="text-red-600 hover:text-red-800 transition-colors">
+                      <button 
+                        onClick={() => handleDelete(employee.id)}
+                        className="text-red-600 hover:text-red-800 transition-colors"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -221,7 +247,11 @@ export const EmployeeManagement = ({ employees, setEmployees }) => {
             </tbody>
           </table>
         </div>
+        {showAddModal && <AddEmployeeModal onClose={() => setShowAddModal(false)} />}
+        {showUpdateModal && <UpdateEmployeeModal employee={selectedEmployee} onClose={() => setShowUpdateModal(false)} />}
       </div>
+
+      {/* هنا ممكن تضيف Modal أو Form لإضافة أو تعديل الموظف */}
     </div>
   );
 };

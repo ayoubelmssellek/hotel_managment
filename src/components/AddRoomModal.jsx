@@ -19,7 +19,7 @@ export const AddRoomModal = ({ onClose }) => {
     checkOut: '',
   });
 
-  const amenitiesOptions = ['wifi', 'tv', 'mini bar', 'balcony', 'jacuzzi'];
+  const amenitiesOptions = ['wifi', 'tv', 'balcony', 'jacuzzi'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;

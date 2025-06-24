@@ -68,7 +68,7 @@ export const UpdateRoomModal = ({ room, onClose }) => {
     onClose();
   };
 
-  const amenitiesOptions = ['wifi', 'tv', 'mini bar', 'balcony', 'jacuzzi'];
+  const amenitiesOptions = ['wifi', 'tv', 'balcony', 'jacuzzi'];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">

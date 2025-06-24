@@ -65,7 +65,6 @@ export const RoomManagement = () => {
     switch (amenity.toLowerCase()) {
       case 'wifi': return <Wifi className="w-4 h-4" />;
       case 'tv': return <Tv className="w-4 h-4" />;
-      case 'mini bar': return <Coffee className="w-4 h-4" />;
       case 'balcony': return <Car className="w-4 h-4" />;
       case 'jacuzzi': return <Bath className="w-4 h-4" />;
       default: return <Settings className="w-4 h-4" />;

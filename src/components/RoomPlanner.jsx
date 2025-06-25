@@ -17,6 +17,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { set } from 'date-fns/fp';
 
 export const RoomPlanner = () => {
   const rooms = useSelector((state) => state.listRoom);
@@ -28,6 +29,7 @@ export const RoomPlanner = () => {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [showTooltip, setShowTooltip] = useState(false);
   const timelineRef = useRef(null);
+  const [showaddnewBookingModal, setShowaddnewBookingModal] = useState(false);
   
   // New state for selection and modals
   const [selection, setSelection] = useState({
@@ -168,6 +170,8 @@ export const RoomPlanner = () => {
       
       // Show booking modal
       setShowBookingModal(true);
+       setShowaddnewBookingModal(false);
+
     }
   };
 
@@ -244,6 +248,11 @@ export const RoomPlanner = () => {
     setShowBookingDetailModal(false);
     // Show success message or update UI
   };
+  const showbookinform=()=>{
+    setShowBookingModal(true);
+    setShowaddnewBookingModal(true);
+
+  }
 
   return (
     <div className="space-y-6">
@@ -253,7 +262,7 @@ export const RoomPlanner = () => {
           <p className="text-gray-600 mt-2">Visual timeline of room bookings and availability</p>
         </div>
         <div className="flex items-center space-x-4">
-          <button className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg">
+          <button onClick={showbookinform} className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg">
             <Plus className="w-5 h-5" />
             <span className="font-medium">New Booking</span>
           </button>
@@ -565,7 +574,7 @@ export const RoomPlanner = () => {
       {/* New Booking Modal */}
       {showBookingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-gray-900">New Booking</h3>
@@ -578,7 +587,9 @@ export const RoomPlanner = () => {
               </div>
               
               <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
+                {
+                  !showaddnewBookingModal ? (
+                  <div className="bg-blue-50 p-4 rounded-lg">
                   <h4 className="font-medium text-blue-800">Selected Dates</h4>
                   <div className="mt-2 grid grid-cols-2 gap-4">
                     <div>
@@ -601,6 +612,100 @@ export const RoomPlanner = () => {
                     </div>
                   </div>
                 </div>
+                  ):(
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+                        {/* Room Number */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                           Room Number
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Enter room number"
+                            value={selection.roomNumber || ''}
+                            onChange={(e) =>
+                              setSelection({ ...selection, roomNumber: e.target.value })
+                            }
+                          />
+                        </div>
+
+                        {/* Room Type */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                             Room Type
+                          </label>
+                          <select
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            value={selection.roomType || ''}
+                            onChange={(e) =>
+                              setSelection({ ...selection, roomType: e.target.value })
+                            }
+                          >
+                            <option value="">-- Select Room Type --</option>
+                            <option value="single">Single</option>
+                            <option value="double">Double</option>
+                            <option value="suite">Suite</option>
+                            <option value="deluxe">Deluxe</option>
+                          </select>
+                        </div>
+
+                        {/* Check-in */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                             Check-in Date
+                          </label>
+                          <input
+                            type="date"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            onChange={(e) => {
+                              const selectedDate = new Date(e.target.value);
+                              setSelection({
+                                ...selection,
+                                startDate: selectedDate,
+                                endDate: new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000),
+                              });
+                            }}
+                          />
+                        </div>
+
+                        {/* Check-out */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                             Check-out Date
+                          </label>
+                          <input
+                            type="date"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            onChange={(e) => {
+                              const selectedDate = new Date(e.target.value);
+                              setSelection({
+                                ...selection,
+                                endDate: selectedDate,
+                              });
+                            }}
+                          />
+                        </div>
+
+                      </div>
+
+                  )
+                }
+                       <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Payment Method
+                        </label>
+                        <select 
+                        
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                      <option value="">-- Select Payment Method --</option>
+                      <option value="credit-card">💳 Credit Card</option>
+                      <option value="versement">💸 Versement</option>
+                      <option value="check">🧾 Check</option>
+                      <option value="ispis">📄 Ispis</option>
+                        </select>
+                      </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

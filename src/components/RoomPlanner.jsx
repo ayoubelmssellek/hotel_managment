@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { 
   Calendar,
   ChevronLeft,
@@ -16,8 +16,8 @@ import {
 import { useSelector } from 'react-redux';
 
 export const RoomPlanner = () => {
-    const rooms = useSelector((state) => state.listRoom);
-   const bookings = useSelector((state) => state.mockBookings);
+  const rooms = useSelector((state) => state.listRoom);
+  const bookings = useSelector((state) => state.mockBookings);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('week');
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -26,9 +26,8 @@ export const RoomPlanner = () => {
   const [showTooltip, setShowTooltip] = useState(false);
   const timelineRef = useRef(null);
 
-
-
-  const getDateRange = () => {
+  // Memoized date range calculation with proper time boundaries
+  const dateRange = useMemo(() => {
     const start = new Date(currentDate);
     const end = new Date(currentDate);
     
@@ -41,33 +40,47 @@ export const RoomPlanner = () => {
       end.setDate(0);
     }
     
-    return { start, end };
-  };
-
-  const getDaysInRange = () => {
-    const { start, end } = getDateRange();
-    const days = [];
-    const current = new Date(start);
+    // Normalize to start and end of day
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
     
-    while (current <= end) {
-      days.push(new Date(current));
+    return { start, end };
+  }, [currentDate, viewMode]);
+
+  // Generate days array for timeline headers
+  const days = useMemo(() => {
+    const daysArray = [];
+    const current = new Date(dateRange.start);
+    
+    while (current <= dateRange.end) {
+      daysArray.push(new Date(current));
       current.setDate(current.getDate() + 1);
     }
     
-    return days;
-  };
+    return daysArray;
+  }, [dateRange]);
 
+  // Calculate booking position with proper clipping to current range
   const getBookingPosition = (booking) => {
-    const { start } = getDateRange();
     const checkIn = new Date(booking.checkIn);
     const checkOut = new Date(booking.checkOut);
+    const startTime = dateRange.start.getTime();
+    const endTime = dateRange.end.getTime();
+    const checkInTime = checkIn.getTime();
+    const checkOutTime = checkOut.getTime();
+
+    // Calculate visible portion of booking within current range
+    const visibleStart = Math.max(checkInTime, startTime);
+    const visibleEnd = Math.min(checkOutTime, endTime);
     
-    const startOffset = Math.max(0, (checkIn.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    const duration = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24);
+    // Calculate day-based positions
+    const dayWidth = 120 * zoomLevel;
+    const startOffsetDays = (visibleStart - startTime) / (1000 * 60 * 60 * 24);
+    const visibleDurationDays = (visibleEnd - visibleStart) / (1000 * 60 * 60 * 24);
     
     return {
-      left: `${startOffset * (120 * zoomLevel)}px`,
-      width: `${duration * (120 * zoomLevel)}px`
+      left: `${startOffsetDays * dayWidth}px`,
+      width: `${Math.max(0, visibleDurationDays) * dayWidth}px`
     };
   };
 
@@ -113,8 +126,6 @@ export const RoomPlanner = () => {
     }
     setCurrentDate(newDate);
   };
-
-  const days = getDaysInRange();
 
   return (
     <div className="space-y-6">
@@ -284,7 +295,16 @@ export const RoomPlanner = () => {
 
                   {/* Booking Blocks */}
                   {bookings
-                    .filter(booking => booking.roomId === room.id)
+                    .filter(booking => {
+                      // Only show bookings that overlap with current date range
+                      const checkIn = new Date(booking.checkIn);
+                      const checkOut = new Date(booking.checkOut);
+                      return (
+                        booking.roomId === room.id &&
+                        checkIn <= dateRange.end && 
+                        checkOut >= dateRange.start
+                      );
+                    })
                     .map((booking) => {
                       const position = getBookingPosition(booking);
                       return (

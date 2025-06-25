@@ -5,7 +5,7 @@ const initialState = {
       name: "Mohamed El Amrani",
       phone: "+212612345678",
       nationality: "Moroccan",
-      vipStatus: "gold",   // ممكن تكون Gold, Silver, Bronze, أو None
+      vipStatus: "gold",
       totalBookings: 5,
       totalSpent: 1250,
       room: "101",
@@ -39,7 +39,7 @@ const initialState = {
       phone: "+212655443322",
       role: "manager",
       department: "Management",
-      status: "active", // active, inactive, on-leave
+      status: "active",
       salary: 75000,
       hireDate: "2021-03-12",
     },
@@ -74,133 +74,188 @@ const initialState = {
       hireDate: "2019-10-11",
     },
   ],
-    listRoom: [
+
+  listRoom: [
     {
       id: 1,
-      number: '101',
+      number: "101",
       floor: 1,
-      type: 'single',
-      status: 'available',
+      type: "single",
+      status: "available",
       price: 80,
-      amenities: ['wifi', 'tv', ],
+      amenities: ["wifi", "tv"],
       lastCleaned: new Date(),
-      currentGuest: '',
+      currentGuest: "",
       checkIn: new Date(),
       checkOut: new Date(new Date().getTime() + 86400000),
     },
     {
       id: 2,
-      number: '102',
+      number: "102",
       floor: 1,
-      type: 'double',
-      status: 'occupied',
+      type: "double",
+      status: "occupied",
       price: 120,
-      amenities: ['wifi','tv', 'balcony'],
+      amenities: ["wifi", "tv", "balcony"],
       lastCleaned: new Date(),
-      currentGuest: 'Fatima Zahra',
+      currentGuest: "Fatima Zahra",
       checkIn: new Date(),
       checkOut: new Date(new Date().getTime() + 172800000),
     },
-        {
+    {
       id: 3,
-      number: '105',
+      number: "105",
       floor: 2,
-      type: 'Suite',
-      status: 'available',
+      type: "Suite",
+      status: "available",
       price: 80,
-      amenities: ['wifi', 'tv'],
+      amenities: ["wifi", "tv"],
       lastCleaned: new Date(),
-      currentGuest: '',
+      currentGuest: "",
       checkIn: new Date(),
       checkOut: new Date(new Date().getTime() + 86400000),
     },
     {
       id: 4,
-      number: '201',
+      number: "201",
       floor: 2,
-      type: 'deluxe',
-      status: 'available',
+      type: "deluxe",
+      status: "available",
       price: 180,
-      amenities: ['wifi', 'tv', 'balcony', 'jacuzzi'],
+      amenities: ["wifi", "tv", "balcony", "jacuzzi"],
       lastCleaned: new Date(),
-      currentGuest: '',
+      currentGuest: "",
       checkIn: null,
       checkOut: null,
     },
     {
       id: 5,
-      number: '202',
+      number: "202",
       floor: 2,
-      type: 'double',
-      status: 'maintenance',
+      type: "double",
+      status: "maintenance",
       price: 70,
-      amenities: ['tv'],
-      lastCleaned: new Date(new Date().getTime() - 3 * 86400000), // cleaned 3 days ago
-      currentGuest: '',
+      amenities: ["tv"],
+      lastCleaned: new Date(new Date().getTime() - 3 * 86400000),
+      currentGuest: "",
       checkIn: null,
       checkOut: null,
     },
     {
       id: 6,
-      number: '301',
+      number: "301",
       floor: 3,
-      type: 'single',
-      status: 'Cleaning',
+      type: "single",
+      status: "Cleaning",
       price: 90,
-      amenities: ['wifi', 'tv', 'jacuzzi'],
+      amenities: ["wifi", "tv", "jacuzzi"],
       lastCleaned: new Date(),
-      currentGuest: '',
-      checkIn: null ,
-      checkOut: null
+      currentGuest: "",
+      checkIn: null,
+      checkOut: null,
     },
-  ]
+  ],
+
+  mockBookings: [
+    {
+      id: "b1",
+      clientName: "John Smith",
+      roomId: 1,
+      roomNumber: "101",
+      checkIn: "2025-06-20",
+      checkOut: "2025-06-23",
+      status: "checked-out",
+      paymentStatus: "paid",
+      totalAmount: 360,
+    },
+    {
+      id: "b2",
+      clientName: "Emma Wilson",
+      roomId: 4,
+      roomNumber: "201",
+      checkIn: "2025-06-19",
+      checkOut: "2025-06-25",
+      status: "checked-in",
+      paymentStatus: "paid",
+      totalAmount: 2100,
+    },
+    {
+      id: "b3",
+      clientName: "James Brown",
+      roomId: 2,
+      roomNumber: "102",
+      checkIn: "2025-07-01",
+      checkOut: "2025-07-05",
+      status: "confirmed",
+      paymentStatus: "pending",
+      totalAmount: 720,
+    },
+  ],
 };
-
-
 
 export default function clientReducer(state = initialState, action) {
   switch (action.type) {
-    // Action types for client management
-    case 'ADD_CLIENT':
+    // Clients
+    case "ADD_CLIENT":
       return { ...state, listClient: [...state.listClient, action.payload] };
-    case 'DELETE_CLIENT':
+    case "DELETE_CLIENT":
       return { ...state, listClient: state.listClient.filter(c => c.id !== action.payload) };
-    case 'UPDATE_CLIENT':
-       return {
-    ...state,
-    listClient: state.listClient.map(c =>
-      c.id === action.payload.id ? action.payload : c
-    )
-   };
-    // Action types for employee management
-    case 'ADD_EMPLOYEE':
+    case "UPDATE_CLIENT":
+      return {
+        ...state,
+        listClient: state.listClient.map(c =>
+          c.id === action.payload.id ? action.payload : c
+        ),
+      };
+
+    // Employees
+    case "ADD_EMPLOYEE":
       return { ...state, listEmployee: [...state.listEmployee, action.payload] };
-    case 'UPDATE_EMPLOYEE':
+    case "UPDATE_EMPLOYEE":
       return {
         ...state,
         listEmployee: state.listEmployee.map(emp =>
           emp.id === action.payload.id ? action.payload : emp
-        )
+        ),
       };
-    case 'DELETE_EMPLOYEE':
+    case "DELETE_EMPLOYEE":
       return {
         ...state,
-        listEmployee: state.listEmployee.filter(emp => emp.id !== action.payload)
+        listEmployee: state.listEmployee.filter(emp => emp.id !== action.payload),
       };
 
-
-    // Action types for room management
-    case 'ADD_ROOM':
+    // Rooms
+    case "ADD_ROOM":
       return { ...state, listRoom: [...state.listRoom, action.payload] };
-    case 'DELETE_ROOM':
-      return { ...state, listRoom: state.listRoom.filter(r => r.id !== action.payload) };
-    case 'UPDATE_ROOM':
+    case "UPDATE_ROOM":
       return {
         ...state,
         listRoom: state.listRoom.map(room =>
           room.id === action.payload.id ? action.payload : room
-        )
+        ),
       };
+    case "DELETE_ROOM":
+      return {
+        ...state,
+        listRoom: state.listRoom.filter(room => room.id !== action.payload),
+      };
+
+    // Bookings
+    case "ADD_BOOKING":
+      return { ...state, mockBookings: [...state.mockBookings, action.payload] };
+    case "UPDATE_BOOKING":
+      return {
+        ...state,
+        mockBookings: state.mockBookings.map(b =>
+          b.id === action.payload.id ? action.payload : b
+        ),
+      };
+    case "DELETE_BOOKING":
+      return {
+        ...state,
+        mockBookings: state.mockBookings.filter(b => b.id !== action.payload),
+      };
+
     default:
       return state;
   }

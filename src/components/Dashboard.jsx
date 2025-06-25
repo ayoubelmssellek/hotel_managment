@@ -8,6 +8,7 @@ import {
   Calendar,
   Clock
 } from 'lucide-react';
+import { RoomPlanner } from './RoomPlanner';
 
 export const Dashboard = ({ stats }) => {
   const statCards = [
@@ -96,7 +97,9 @@ export const Dashboard = ({ stats }) => {
           );
         })}
       </div>
-
+     <div>
+        <RoomPlanner/>
+      </div>
       {/* Charts and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Revenue Chart */}
@@ -173,6 +176,7 @@ export const Dashboard = ({ stats }) => {
           </button>
         </div>
       </div>
+    
     </div>
   );
 };

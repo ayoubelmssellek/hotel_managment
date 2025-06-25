@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Navigation } from './components/Navigation';
 import { Dashboard } from './components/Dashboard';
 import { EmployeeManagement } from './components/EmployeeManagement';
@@ -6,21 +6,26 @@ import { ClientManagement } from './components/ClientManagement';
 import { RoomManagement } from './components/RoomManagement';
 import { InventoryManagement } from './components/InventoryManagement';
 import { Reports } from './components/Reports';
+import { RoomPlanner } from './components/RoomPlanner';
 import { useHotelData } from './hooks/useHotelData';
 
 function App() {
-  const [currentView, setCurrentView] = useState('dashboard');
+  const [currentView, setCurrentView] = React.useState('dashboard');
+  
   const { 
-    employees, 
-    clients, 
-    rooms, 
-    inventory, 
-    dashboardStats, 
+    employees,
+    clients,
+    rooms,
+    inventory,
+    bookings,
+    dashboardStats,
     loading,
+    refreshData,
     setEmployees,
     setClients,
     setRooms,
-    setInventory
+    setInventory,
+    setBookings,
   } = useHotelData();
 
   const renderCurrentView = () => {
@@ -35,6 +40,8 @@ function App() {
         return <RoomManagement rooms={rooms} setRooms={setRooms} />;
       case 'inventory':
         return <InventoryManagement inventory={inventory} setInventory={setInventory} />;
+      case 'roomplanner':
+        return <RoomPlanner rooms={rooms} bookings={bookings} />;
       case 'reports':
         return <Reports stats={dashboardStats} />;
       default:

@@ -46,3 +46,19 @@ export const updateRoom = (room) => ({
   type: 'UPDATE_ROOM',
   payload: room,
 });
+
+// Room management actions
+export const addBooking = (room) => ({
+  type: 'ADD_BOOKING',
+  payload: room,
+});
+
+export const deleteBooking = (id) => ({
+  type: 'DELETE_BOOKING',
+  payload: id,
+});
+
+export const updateBooking = (room) => ({
+  type: 'UPDATE_BOOKING',
+  payload: room,
+});

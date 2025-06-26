@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { 
   Calendar,
   ChevronLeft,
@@ -16,7 +16,8 @@ import {
   Edit,
   Trash2
 } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { addBooking, updateBooking, deleteBooking } from '../store/actions/clientActions';
 import { set } from 'date-fns/fp';
 
 export const RoomPlanner = () => {
@@ -44,6 +45,91 @@ export const RoomPlanner = () => {
   const [showBookingDetailModal, setShowBookingDetailModal] = useState(false);
   const [editingBooking, setEditingBooking] = useState(null);
 
+  const dispatch = useDispatch();
+
+  // Booking form state
+  const [bookingForm, setBookingForm] = useState({
+    roomId: '',
+    checkIn: '',
+    checkOut: '',
+    clientName: '',
+    contact: '',
+    guests: 1,
+    status: 'confirmed',
+    paymentStatus: 'pending',
+    paymentMethod: '',
+    totalAmount: '',
+    deposit: '',
+  });
+
+  // Auto-calculate totalAmount when room, checkIn, and checkOut are set
+  useEffect(() => {
+    if (bookingForm.roomId && bookingForm.checkIn && bookingForm.checkOut) {
+      const room = rooms.find(r => r.id === parseInt(bookingForm.roomId));
+      if (room) {
+        const checkInDate = new Date(bookingForm.checkIn);
+        const checkOutDate = new Date(bookingForm.checkOut);
+        // Add one day to duration
+        const nights = ((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)) + 1;
+        if (nights > 0) {
+          setBookingForm(prev => ({ ...prev, totalAmount: (room.price * nights).toFixed(2) }));
+        } else {
+          setBookingForm(prev => ({ ...prev, totalAmount: '' }));
+        }
+      }
+    }
+  }, [bookingForm.roomId, bookingForm.checkIn, bookingForm.checkOut, rooms]);
+
+  // Handle booking form change
+  const handleBookingFormChange = (e) => {
+    const { name, value } = e.target;
+    setBookingForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handle booking form submit
+  const handleBookingFormSubmit = (e) => {
+    e.preventDefault();
+    // Find room info
+    let room = rooms.find(r => r.id === parseInt(bookingForm.roomId));
+    // Fallback to selection if not chosen from dropdown
+    if (!room && selection.room) room = selection.room;
+    // Compose booking object
+    const newBooking = {
+      id: `b${Date.now()}`,
+      clientName: bookingForm.clientName,
+      contact: bookingForm.contact,
+      roomId: room ? room.id : '',
+      roomNumber: room ? room.number : '',
+      roomType: room ? room.type : bookingForm.roomType,
+      checkIn: bookingForm.checkIn || (selection.startDate ? selection.startDate.toISOString().slice(0,10) : ''),
+      checkOut: bookingForm.checkOut || (selection.endDate ? selection.endDate.toISOString().slice(0,10) : ''),
+      guests: parseInt(bookingForm.guests) || 1,
+      status: bookingForm.status,
+      paymentStatus: bookingForm.paymentStatus,
+      paymentMethod: bookingForm.paymentMethod,
+      totalAmount: parseFloat(bookingForm.totalAmount) || 0,
+      deposit: parseFloat(bookingForm.deposit) || 0,
+      requests: bookingForm.requests,
+    };
+    dispatch(addBooking(newBooking));
+    setShowBookingModal(false);
+    setShowaddnewBookingModal(false);
+    setBookingForm({
+      roomId: '',
+      checkIn: '',
+      checkOut: '',
+      clientName: '',
+      contact: '',
+      guests: 1,
+      status: 'confirmed',
+      paymentStatus: 'pending',
+      paymentMethod: '',
+      totalAmount: '',
+      deposit: '',
+     
+    });
+  };
+
   // NEW: Group rooms by type
   const groupedRooms = useMemo(() => {
     const groups = {};
@@ -56,7 +142,7 @@ export const RoomPlanner = () => {
     });
     
     // Sort groups by custom order
-    const groupOrder = ['single', 'double', 'suite', 'deluxe'];
+    const groupOrder = ['Twin', 'Double', 'Triple'];
     return groupOrder
       .filter(type => groups[type])
       .map(type => ({
@@ -111,12 +197,10 @@ export const RoomPlanner = () => {
     // Calculate visible portion of booking within current range
     const visibleStart = Math.max(checkInTime, startTime);
     const visibleEnd = Math.min(checkOutTime, endTime);
-    
-    // Calculate day-based positions
+    // Add one day to visible duration
     const dayWidth = 120 * zoomLevel;
     const startOffsetDays = (visibleStart - startTime) / (1000 * 60 * 60 * 24);
-    const visibleDurationDays = (visibleEnd - visibleStart) / (1000 * 60 * 60 * 24);
-    
+    const visibleDurationDays = ((visibleEnd - visibleStart) / (1000 * 60 * 60 * 24)) + 1;
     return {
       left: `${startOffsetDays * dayWidth}px`,
       width: `${Math.max(0, visibleDurationDays) * dayWidth}px`
@@ -214,6 +298,18 @@ export const RoomPlanner = () => {
     setShowBookingDetailModal(true);
   };
 
+  // NEW: Handle booking update
+  const handleUpdateBooking = () => {
+    dispatch(updateBooking(editingBooking));
+    setShowBookingDetailModal(false);
+  };
+
+  // NEW: Handle booking deletion
+  const handleDeleteBooking = () => {
+    dispatch(deleteBooking(editingBooking.id));
+    setShowBookingDetailModal(false);
+  };
+
   const navigateDate = (direction) => {
     const newDate = new Date(currentDate);
     if (viewMode === 'week') {
@@ -233,21 +329,6 @@ export const RoomPlanner = () => {
     });
   };
 
-  // NEW: Handle booking update
-  const handleUpdateBooking = () => {
-    // In a real app, you would dispatch an action to update the booking
-    console.log("Updated booking:", editingBooking);
-    setShowBookingDetailModal(false);
-    // Show success message or update UI
-  };
-
-  // NEW: Handle booking deletion
-  const handleDeleteBooking = () => {
-    // In a real app, you would dispatch an action to delete the booking
-    console.log("Deleted booking:", editingBooking.id);
-    setShowBookingDetailModal(false);
-    // Show success message or update UI
-  };
   const showbookinform=()=>{
     setShowBookingModal(true);
     setShowaddnewBookingModal(true);
@@ -379,16 +460,15 @@ export const RoomPlanner = () => {
               <div key={group.type}>
                 {/* Group header */}
                 <div className="h-10 flex items-center px-4 border-b border-gray-200 bg-gray-50">
-                  <span className="font-semibold text-gray-700 text-sm">{group.type} Rooms</span>
+                  <span className="font-semibold text-gray-700 text-sm">{group.type} Rooms ({group.rooms.length})</span>
                 </div>
                 
                 {/* Rooms in group */}
                 {group.rooms.map((room) => (
-                  <div key={room.id} className="h-20 flex items-center px-4 border-b border-gray-200">
+                  <div key={room.id} className="h-16 flex items-center px-4 border-b border-gray-200">
                     <div>
-                      <div className="font-medium text-gray-900">Room {room.number}</div>
-                      <div className="text-sm text-gray-600">{room.type} • Floor {room.floor}</div>
-                      <div className="text-xs text-gray-500">${room.price}/night</div>
+                      <div className="font-medium text-gray-900">Room {room.number} • <span className='text-sm'> Floor {room.floor}</span> </div>
+                 
                     </div>
                   </div>
                 ))}
@@ -436,7 +516,7 @@ export const RoomPlanner = () => {
                   {group.rooms.map((room) => (
                     <div 
                       key={room.id} 
-                      className="h-20 border-b border-gray-200 relative"
+                      className="h-16 border-b border-gray-200 relative"
                       onMouseUp={handleMouseUp}
                     >
                       {/* Day Grid */}
@@ -585,8 +665,7 @@ export const RoomPlanner = () => {
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              
-              <div className="space-y-4">
+              <form onSubmit={handleBookingFormSubmit} className="space-y-4">
                 {
                   !showaddnewBookingModal ? (
                   <div className="bg-blue-50 p-4 rounded-lg">
@@ -615,40 +694,33 @@ export const RoomPlanner = () => {
                   ):(
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
                         {/* Room Number */}
-                        <div>
+                        <div className='col-span-2'>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                            Room Number
                           </label>
-                          <input
-                            type="text"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Enter room number"
-                            value={selection.roomNumber || ''}
-                            onChange={(e) =>
-                              setSelection({ ...selection, roomNumber: e.target.value })
-                            }
-                          />
-                        </div>
-
-                        {/* Room Type */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                             Room Type
-                          </label>
                           <select
+                            name="roomId"
+                            value={bookingForm.roomId}
+                            onChange={handleBookingFormChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            value={selection.roomType || ''}
-                            onChange={(e) =>
-                              setSelection({ ...selection, roomType: e.target.value })
+                           >
+                            <option disabled value="">Select Room</option>
+                            {
+                              ['Twin','Double','Triple'].map(roomType =>(
+                                <optgroup label={roomType} key={roomType}>
+                                   {
+                                    rooms.filter(r => r.type === roomType).map(
+                                      r => <option value={r.id} key={r.id}>{r.number}</option>
+                                    )
+                                   }
+
+                                </optgroup>
+                              ))
                             }
-                          >
-                            <option value="">-- Select Room Type --</option>
-                            <option value="single">Single</option>
-                            <option value="double">Double</option>
-                            <option value="suite">Suite</option>
-                            <option value="deluxe">Deluxe</option>
                           </select>
                         </div>
+
+
 
                         {/* Check-in */}
                         <div>
@@ -657,15 +729,10 @@ export const RoomPlanner = () => {
                           </label>
                           <input
                             type="date"
+                            name="checkIn"
+                            value={bookingForm.checkIn}
+                            onChange={handleBookingFormChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            onChange={(e) => {
-                              const selectedDate = new Date(e.target.value);
-                              setSelection({
-                                ...selection,
-                                startDate: selectedDate,
-                                endDate: new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000),
-                              });
-                            }}
                           />
                         </div>
 
@@ -676,14 +743,10 @@ export const RoomPlanner = () => {
                           </label>
                           <input
                             type="date"
+                            name="checkOut"
+                            value={bookingForm.checkOut}
+                            onChange={handleBookingFormChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            onChange={(e) => {
-                              const selectedDate = new Date(e.target.value);
-                              setSelection({
-                                ...selection,
-                                endDate: selectedDate,
-                              });
-                            }}
                           />
                         </div>
 
@@ -691,345 +754,393 @@ export const RoomPlanner = () => {
 
                   )
                 }
-                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Payment Method
-                        </label>
-                        <select 
-                        
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                      <option value="">-- Select Payment Method --</option>
-                      <option value="credit-card">💳 Credit Card</option>
-                      <option value="versement">💸 Versement</option>
-                      <option value="check">🧾 Check</option>
-                      <option value="ispis">📄 Ispis</option>
-                        </select>
-                      </div>
-                
-                <div>
+              
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Guest Name
                   </label>
                   <input
                     type="text"
+                    name="clientName"
+                    value={bookingForm.clientName}
+                    onChange={handleBookingFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter guest name"
                   />
                 </div>
-                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Contact Information
                   </label>
                   <input
                     type="text"
+                    name="contact"
+                    value={bookingForm.contact}
+                    onChange={handleBookingFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Email or phone number"
                   />
                 </div>
+                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Number of Guests
                     </label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                      <option>1</option>
-                      <option>2</option>
-                      <option>3</option>
-                      <option>4</option>
+                    <select
+                      name="guests"
+                      value={bookingForm.guests}
+                      onChange={handleBookingFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
                     </select>
                   </div>
-                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Booking Status
                     </label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                      <option>Confirmed</option>
-                      <option>Pending</option>
+                    <select
+                      name="status"
+                      value={bookingForm.status}
+                      onChange={handleBookingFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="confirmed">Confirmed</option>
+                      <option value="pending">Pending</option>
                     </select>
                   </div>
                 </div>
-                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Payment Method
+                  </label>
+                  <select 
+                    name="paymentMethod"
+                    value={bookingForm.paymentMethod}
+                    onChange={handleBookingFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">-- Select Payment Method --</option>
+                    <option value="credit-card">💳 Credit Card</option>
+                    <option value="versement">💸 Versement</option>
+                    <option value="check">🧾 Check</option>
+                    <option value="ispis">📄 Ispis</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Total Amount
+                  </label>
+                  <input
+                    type="number"
+                    name="totalAmount"
+                    value={bookingForm.totalAmount}
+                    onChange={handleBookingFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Total amount"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Deposit Paid
+                  </label>
+                  <input
+                    type="number"
+                    name="deposit"
+                    value={bookingForm.deposit}
+                    onChange={handleBookingFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Deposit paid"
+                  />
+                </div>
+
+                </div>
+               
                 <div className="pt-4 flex justify-end space-x-3">
                   <button
+                    type="button"
                     onClick={() => setShowBookingModal(false)}
                     className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                   >
                     Cancel
                   </button>
                   <button
+                    type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
                     Create Booking
                   </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Wider Booking Detail Modal */}
+      {showBookingDetailModal && editingBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[95vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-900">Booking Details</h3>
+                <button 
+                  onClick={() => setShowBookingDetailModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Two-column layout */}
+                  {/* Left Column */}
+                  <div className="space-y-4">
+                    <div className="pb-2 border-b border-gray-200">
+                      <h4 className="font-semibold text-gray-900 flex items-center">
+                        <User className="w-5 h-5 text-gray-400 mr-2" />
+                        Guest Information
+                      </h4>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Guest Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editingBooking.clientName}
+                        onChange={(e) => setEditingBooking({...editingBooking, clientName: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter guest name"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contact Information
+                      </label>
+                      <input
+                        type="text"
+                        value={editingBooking.contact || ''}
+                        onChange={(e) => setEditingBooking({...editingBooking, contact: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Email or phone number"
+                      />
+                    </div>
+                
+                  </div>
+                  
+                  {/* Right Column */}
+                  <div className="space-y-4">
+                    <div className="pb-2 border-b border-gray-200">
+                      <h4 className="font-semibold text-gray-900 flex items-center">
+                        <Calendar className="w-5 h-5 text-gray-400 mr-2" />
+                        Booking Details
+                      </h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Check-in
+                        </label>
+                        <div className="font-medium">
+                          {formatDate(new Date(editingBooking.checkIn))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Check-out
+                        </label>
+                        <div className="font-medium">
+                          {formatDate(new Date(editingBooking.checkOut))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Room
+                        </label>
+                        <div className="font-medium">
+                          Room {editingBooking.roomNumber} - {editingBooking.roomType || 'Standard'}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Guests
+                        </label>
+                        <input
+                          type="number"
+                          value={editingBooking.guests || 1}
+                          onChange={(e) => setEditingBooking({...editingBooking, guests: parseInt(e.target.value) || 1})}
+                          min="1"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Status Section */}
+                  <div className="space-y-4">
+                    <div className="pb-2 border-b border-gray-200">
+                      <h4 className="font-semibold text-gray-900 flex items-center">
+                        <Info className="w-5 h-5 text-gray-400 mr-2" />
+                        Status & Payment
+                      </h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Status
+                        </label>
+                        <select 
+                          value={editingBooking.status}
+                          onChange={(e) => setEditingBooking({...editingBooking, status: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="confirmed">Confirmed</option>
+                          <option value="checked-in">Checked In</option>
+                          <option value="checked-out">Checked Out</option>
+                          <option value="cancelled">Cancelled</option>
+                          <option value="no-show">No Show</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Payment
+                        </label>
+                        <select 
+                          value={editingBooking.paymentStatus}
+                          onChange={(e) => setEditingBooking({...editingBooking, paymentStatus: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="paid">Paid</option>
+                          <option value="pending">Pending</option>
+                          <option value="partial">Partial</option>
+                          <option value="refunded">Refunded</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Payment Method
+                        </label>
+                        <select 
+                                value={editingBooking.paymentStatus}
+                                onChange={(e) => setEditingBooking({...editingBooking, paymentStatus: e.target.value})}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              >
+                            <option value="">-- Select Payment Method --</option>
+                            <option value="credit-card">💳 Credit Card</option>
+                            <option value="versement">💸 Versement</option>
+                            <option value="check">🧾 Check</option>
+                            <option value="ispis">📄 Ispis</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Financial Section */}
+                  <div className="space-y-4">
+                    <div className="pb-2 border-b border-gray-200">
+                      <h4 className="font-semibold text-gray-900 flex items-center">
+                        <DollarSign className="w-5 h-5 text-gray-400 mr-2" />
+                        Financial Information
+                      </h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Total Amount
+                        </label>
+                        <div className="flex">
+                          <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            value={editingBooking.totalAmount}
+                            onChange={(e) => setEditingBooking({...editingBooking, totalAmount: parseFloat(e.target.value) || 0})}
+                            className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Deposit Paid
+                        </label>
+                        <div className="flex">
+                          <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
+                            $
+                          </span>
+                          <input
+                            type="number"
+                            value={editingBooking.deposit || 0}
+                            onChange={(e) => setEditingBooking({...editingBooking, deposit: parseFloat(e.target.value) || 0})}
+                            className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Special Requests
+                  </label>
+                  <textarea
+                    rows="2"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={editingBooking.requests || ''}
+                    onChange={(e) => setEditingBooking({...editingBooking, requests: e.target.value})}
+                  />
+                </div>
+                
+                <div className="pt-4 flex justify-between">
+                  <button
+                    onClick={handleDeleteBooking}
+                    className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center space-x-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Booking</span>
+                  </button>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => setShowBookingDetailModal(false)}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleUpdateBooking}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Update Booking</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       )}
-
-  {/* Wider Booking Detail Modal */}
-{showBookingDetailModal && editingBooking && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-<div className="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[95vh] overflow-y-auto">
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-900">Booking Details</h3>
-          <button 
-            onClick={() => setShowBookingDetailModal(false)}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Two-column layout */}
-            {/* Left Column */}
-            <div className="space-y-4">
-              <div className="pb-2 border-b border-gray-200">
-                <h4 className="font-semibold text-gray-900 flex items-center">
-                  <User className="w-5 h-5 text-gray-400 mr-2" />
-                  Guest Information
-                </h4>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Guest Name
-                </label>
-                <input
-                  type="text"
-                  value={editingBooking.clientName}
-                  onChange={(e) => setEditingBooking({...editingBooking, clientName: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter guest name"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Information
-                </label>
-                <input
-                  type="text"
-                  value={editingBooking.contact || ''}
-                  onChange={(e) => setEditingBooking({...editingBooking, contact: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Email or phone number"
-                />
-              </div>
-          
-            </div>
-            
-            {/* Right Column */}
-            <div className="space-y-4">
-              <div className="pb-2 border-b border-gray-200">
-                <h4 className="font-semibold text-gray-900 flex items-center">
-                  <Calendar className="w-5 h-5 text-gray-400 mr-2" />
-                  Booking Details
-                </h4>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Check-in
-                  </label>
-                  <div className="font-medium">
-                    {formatDate(new Date(editingBooking.checkIn))}
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Check-out
-                  </label>
-                  <div className="font-medium">
-                    {formatDate(new Date(editingBooking.checkOut))}
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Room
-                  </label>
-                  <div className="font-medium">
-                    Room {editingBooking.roomNumber} - {editingBooking.roomType || 'Standard'}
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Guests
-                  </label>
-                  <input
-                    type="number"
-                    value={editingBooking.guests || 1}
-                    onChange={(e) => setEditingBooking({...editingBooking, guests: parseInt(e.target.value) || 1})}
-                    min="1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Status Section */}
-            <div className="space-y-4">
-              <div className="pb-2 border-b border-gray-200">
-                <h4 className="font-semibold text-gray-900 flex items-center">
-                  <Info className="w-5 h-5 text-gray-400 mr-2" />
-                  Status & Payment
-                </h4>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select 
-                    value={editingBooking.status}
-                    onChange={(e) => setEditingBooking({...editingBooking, status: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="confirmed">Confirmed</option>
-                    <option value="checked-in">Checked In</option>
-                    <option value="checked-out">Checked Out</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="no-show">No Show</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment
-                  </label>
-                  <select 
-                    value={editingBooking.paymentStatus}
-                    onChange={(e) => setEditingBooking({...editingBooking, paymentStatus: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="paid">Paid</option>
-                    <option value="pending">Pending</option>
-                    <option value="partial">Partial</option>
-                    <option value="refunded">Refunded</option>
-                  </select>
-                </div>
-                   <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment Method
-                  </label>
-                  <select 
-                    value={editingBooking.paymentStatus}
-                    onChange={(e) => setEditingBooking({...editingBooking, paymentStatus: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                <option value="">-- Select Payment Method --</option>
-                <option value="credit-card">💳 Credit Card</option>
-                <option value="versement">💸 Versement</option>
-                <option value="check">🧾 Check</option>
-                <option value="ispis">📄 Ispis</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            
-            {/* Financial Section */}
-            <div className="space-y-4">
-              <div className="pb-2 border-b border-gray-200">
-                <h4 className="font-semibold text-gray-900 flex items-center">
-                  <DollarSign className="w-5 h-5 text-gray-400 mr-2" />
-                  Financial Information
-                </h4>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Total Amount
-                  </label>
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
-                      $
-                    </span>
-                    <input
-                      type="number"
-                      value={editingBooking.totalAmount}
-                      onChange={(e) => setEditingBooking({...editingBooking, totalAmount: parseFloat(e.target.value) || 0})}
-                      className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Deposit Paid
-                  </label>
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
-                      $
-                    </span>
-                    <input
-                      type="number"
-                      value={editingBooking.deposit || 0}
-                      onChange={(e) => setEditingBooking({...editingBooking, deposit: parseFloat(e.target.value) || 0})}
-                      className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Special Requests
-            </label>
-            <textarea
-              value={editingBooking.requests || ''}
-              onChange={(e) => setEditingBooking({...editingBooking, requests: e.target.value})}
-              rows="3"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Any special requirements or notes..."
-            />
-          </div>
-          
-          <div className="pt-4 flex justify-between">
-            <button
-              onClick={handleDeleteBooking}
-              className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center space-x-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>Delete Booking</span>
-            </button>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowBookingDetailModal(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdateBooking}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-              >
-                <Edit className="w-4 h-4" />
-                <span>Update Booking</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
     </div>
   );
 };

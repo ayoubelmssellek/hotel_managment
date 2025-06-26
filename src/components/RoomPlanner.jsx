@@ -185,6 +185,16 @@ export const RoomPlanner = () => {
     return daysArray;
   }, [dateRange]);
 
+    
+
+ // تقريب لأسفل
+  
+  // حساب المدة المرئية +1 لضمان شمول اليوم الأخير
+ 
+
+  
+
+
   // Calculate booking position with proper clipping to current range
   const getBookingPosition = (booking) => {
     const checkIn = new Date(booking.checkIn);
@@ -200,11 +210,14 @@ export const RoomPlanner = () => {
     // Add one day to visible duration
     const dayWidth = 120 * zoomLevel;
     const startOffsetDays = (visibleStart - startTime) / (1000 * 60 * 60 * 24);
-    const visibleDurationDays = ((visibleEnd - visibleStart) / (1000 * 60 * 60 * 24)) + 1;
+    const startDayIndex = Math.floor(startOffsetDays); // تقريب لأسفل للحصول على رقم صحيح
+    const endDayIndex = Math.floor((visibleEnd - startTime) / (1000 * 60 * 60 * 24)); 
+    const visibleDurationDays = Math.max(0, endDayIndex - startDayIndex + 1);
+ 
     return {
-      left: `${startOffsetDays * dayWidth}px`,
-      width: `${Math.max(0, visibleDurationDays) * dayWidth}px`
-    };
+      left: `${startDayIndex * dayWidth}px`, // الموضع بناءً على مؤشر اليوم
+      width: `${visibleDurationDays * dayWidth}px` // العرض بناءً على عدد الأيام
+    };
   };
 
   // Handle mouse events for date range selection

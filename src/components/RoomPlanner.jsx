@@ -714,6 +714,7 @@ export const RoomPlanner = () => {
                           <select
                             name="roomId"
                             value={bookingForm.roomId}
+                            required
                             onChange={handleBookingFormChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                            >
@@ -743,6 +744,7 @@ export const RoomPlanner = () => {
                           <input
                             type="date"
                             name="checkIn"
+                            required
                             value={bookingForm.checkIn}
                             onChange={handleBookingFormChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -757,6 +759,7 @@ export const RoomPlanner = () => {
                           <input
                             type="date"
                             name="checkOut"
+                            required
                             value={bookingForm.checkOut}
                             onChange={handleBookingFormChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -776,6 +779,7 @@ export const RoomPlanner = () => {
                   <input
                     type="text"
                     name="clientName"
+                    required
                     value={bookingForm.clientName}
                     onChange={handleBookingFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -789,6 +793,7 @@ export const RoomPlanner = () => {
                   <input
                     type="text"
                     name="contact"
+                    required
                     value={bookingForm.contact}
                     onChange={handleBookingFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -804,6 +809,7 @@ export const RoomPlanner = () => {
                     </label>
                     <select
                       name="guests"
+                      required
                       value={bookingForm.guests}
                       onChange={handleBookingFormChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -820,6 +826,7 @@ export const RoomPlanner = () => {
                     </label>
                     <select
                       name="status"
+                      required
                       value={bookingForm.status}
                       onChange={handleBookingFormChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -835,6 +842,7 @@ export const RoomPlanner = () => {
                   </label>
                   <select 
                     name="paymentMethod"
+                    required
                     value={bookingForm.paymentMethod}
                     onChange={handleBookingFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -854,6 +862,7 @@ export const RoomPlanner = () => {
                   <input
                     type="number"
                     name="totalAmount"
+                    required
                     value={bookingForm.totalAmount}
                     onChange={handleBookingFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -867,6 +876,7 @@ export const RoomPlanner = () => {
                   <input
                     type="number"
                     name="deposit"
+                    required
                     value={bookingForm.deposit}
                     onChange={handleBookingFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -929,6 +939,7 @@ export const RoomPlanner = () => {
                       </label>
                       <input
                         type="text"
+                        required
                         value={editingBooking.clientName}
                         onChange={(e) => setEditingBooking({...editingBooking, clientName: e.target.value})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -942,6 +953,7 @@ export const RoomPlanner = () => {
                       </label>
                       <input
                         type="text"
+                        required
                         value={editingBooking.contact || ''}
                         onChange={(e) => setEditingBooking({...editingBooking, contact: e.target.value})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -994,6 +1006,7 @@ export const RoomPlanner = () => {
                         </label>
                         <input
                           type="number"
+                          required
                           value={editingBooking.guests || 1}
                           onChange={(e) => setEditingBooking({...editingBooking, guests: parseInt(e.target.value) || 1})}
                           min="1"
@@ -1021,6 +1034,7 @@ export const RoomPlanner = () => {
                         </label>
                         <select 
                           value={editingBooking.status}
+                          required
                           onChange={(e) => setEditingBooking({...editingBooking, status: e.target.value})}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
@@ -1038,6 +1052,7 @@ export const RoomPlanner = () => {
                         </label>
                         <select 
                           value={editingBooking.paymentStatus}
+                          required
                           onChange={(e) => setEditingBooking({...editingBooking, paymentStatus: e.target.value})}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
@@ -1053,6 +1068,7 @@ export const RoomPlanner = () => {
                         </label>
                         <select 
                                 value={editingBooking.paymentStatus}
+                                required
                                 onChange={(e) => setEditingBooking({...editingBooking, paymentStatus: e.target.value})}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                               >
@@ -1086,6 +1102,7 @@ export const RoomPlanner = () => {
                           </span>
                           <input
                             type="number"
+                            required
                             value={editingBooking.totalAmount}
                             onChange={(e) => setEditingBooking({...editingBooking, totalAmount: parseFloat(e.target.value) || 0})}
                             className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -1103,6 +1120,7 @@ export const RoomPlanner = () => {
                           </span>
                           <input
                             type="number"
+                            required
                             value={editingBooking.deposit || 0}
                             onChange={(e) => setEditingBooking({...editingBooking, deposit: parseFloat(e.target.value) || 0})}
                             className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

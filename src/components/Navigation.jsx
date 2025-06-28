@@ -7,7 +7,9 @@ import {
   Package, 
   BarChart3,
   Settings,
-  LogOut
+  LogOut,
+  Sparkle,
+  Sparkles
 } from 'lucide-react';
 
 const navigationItems = [
@@ -15,6 +17,7 @@ const navigationItems = [
   { id: 'employees', label: 'Employees', icon: Users },
   { id: 'clients', label: 'Clients', icon: UserCheck },
   { id: 'rooms', label: 'Rooms', icon: BedDouble },
+  { id: 'housekeeping', label: 'Housekeeping', icon: Sparkles },
   { id: 'inventory', label: 'Inventory', icon: Package },
   { id: 'reports', label: 'Reports', icon: BarChart3 },
 ];

@@ -8,6 +8,7 @@ import { InventoryManagement } from './components/InventoryManagement';
 import { Reports } from './components/Reports';
 import { RoomPlanner } from './components/RoomPlanner';
 import { useHotelData } from './hooks/useHotelData';
+import { HousekeepingManagement } from './components/housekeeping';
 
 function App() {
   const [currentView, setCurrentView] = React.useState('dashboard');
@@ -42,6 +43,8 @@ function App() {
         return <InventoryManagement inventory={inventory} setInventory={setInventory} />;
       case 'roomplanner':
         return <RoomPlanner rooms={rooms} bookings={bookings} />;
+      case 'housekeeping':
+        return <HousekeepingManagement rooms={rooms} setRooms={setRooms} />;  
       case 'reports':
         return <Reports stats={dashboardStats} />;
       default:

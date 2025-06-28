@@ -56,18 +56,7 @@ export const HousekeepingManagement = () => {
       estimatedTime: 90,
       notes: 'Deep cleaning required after maintenance work',
     },
-    {
-      id: '4',
-      roomId: 4,
-      assignedTo: 7,
-      status: 'inspection',
-      priority: 'medium',
-      taskType: 'guest-request',
-      estimatedTime: 30,
-      startTime: '14:30',
-      guestRequests: ['Towel replacement'],
-      notes: 'Guest requested additional amenities',
-    },
+    
   ]);
 
   const housekeepingStaff = employees.filter(emp => emp.role === 'housekeeping');

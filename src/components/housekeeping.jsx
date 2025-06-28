@@ -65,7 +65,7 @@ export const HousekeepingManagement = () => {
       taskType: 'guest-request',
       estimatedTime: 30,
       startTime: '14:30',
-      guestRequests: ['Towel replacement', 'Mini bar restock'],
+      guestRequests: ['Towel replacement'],
       notes: 'Guest requested additional amenities',
     },
   ]);
